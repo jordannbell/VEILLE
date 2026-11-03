@@ -1,0 +1,110 @@
+- defaultTab: nodes
+  description: Collecte des releases GitHub vers raw_items
+  executionEnabled: true
+  group: veille/collecte
+  id: 43bce8ea-1e9b-4ccf-9f0d-17c0c9e602cd
+  loglevel: INFO
+  name: collect-github
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Command
+      exec: '   /opt/veille-venv/bin/python /opt/veille/collectors/github_releases.py'
+    keepgoing: false
+    strategy: node-first
+  user: admin
+  uuid: 43bce8ea-1e9b-4ccf-9f0d-17c0c9e602cd
+- defaultTab: nodes
+  description: Collecte des flux RSS vers raw_items
+  executionEnabled: true
+  group: veille/collecte
+  id: c14abdb1-9101-49ba-812b-8dfe413d4762
+  loglevel: INFO
+  name: collect-rss
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Command
+      exec: '   /opt/veille-venv/bin/python /opt/veille/collectors/rss_feeds.py'
+    keepgoing: false
+    strategy: node-first
+  user: admin
+  uuid: c14abdb1-9101-49ba-812b-8dfe413d4762
+- defaultTab: nodes
+  description: 'Dédoublonnage : raw_items vers items'
+  executionEnabled: true
+  group: veille/job
+  id: 6eb89961-5277-4adc-9e07-0281d64178df
+  loglevel: INFO
+  name: ingest
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Command
+      exec: ' sh /opt/veille/scripts/ingest.sh'
+    keepgoing: false
+    strategy: node-first
+  user: admin
+  uuid: 6eb89961-5277-4adc-9e07-0281d64178df
+- defaultTab: nodes
+  description: 'Collecte, dédoublonnage et stockage quotidiens'
+  executionEnabled: true
+  group: veille
+  id: 36142797-5ea5-40b1-98a7-926512c54d02
+  loglevel: INFO
+  name: pipeline-quotidien
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  retry: '1'
+  schedule:
+    month: '*'
+    time:
+      hour: '06'
+      minute: '30'
+      seconds: '0'
+    weekday:
+      day: '*'
+    year: '*'
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Job reference
+      errorhandler:
+        exec: echo "[N1] collect-github en echec dans pipeline-quotidien"
+        keepgoingOnSuccess: true
+      jobref:
+        group: veille/collecte
+        name: collect-github
+        project: veille
+        uuid: 43bce8ea-1e9b-4ccf-9f0d-17c0c9e602cd
+    - description: Job reference
+      errorhandler:
+        exec: echo "[N1] collect-rss en echec dans pipeline-quotidien"
+        keepgoingOnSuccess: true
+      jobref:
+        group: veille/collecte
+        name: collect-rss
+        project: veille
+        uuid: c14abdb1-9101-49ba-812b-8dfe413d4762
+    - description: Job reference
+      jobref:
+        group: veille/job
+        name: ingest
+        project: veille
+        uuid: 6eb89961-5277-4adc-9e07-0281d64178df
+    keepgoing: false
+    strategy: node-first
+  timeZone: Etc/GMT+1
+  timeout: '20'
+  user: admin
+  uuid: 36142797-5ea5-40b1-98a7-926512c54d02

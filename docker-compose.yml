@@ -39,6 +39,7 @@ services:
       - rundeck_data:/home/rundeck/server/data
       - ./collectors:/opt/veille/collectors:ro
       - ./sql:/opt/veille/sql:ro
+      - ./scripts:/opt/veille/scripts:ro
 
 volumes:
   pgdata:
