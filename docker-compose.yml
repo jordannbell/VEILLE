@@ -3,12 +3,43 @@ services:
     image: postgres:16
     environment:
       POSTGRES_USER: veille
-      POSTGRES_PASSWORD: veille_dev
+      POSTGRES_PASSWORD: ${VEILLE_DB_PASSWORD}
       POSTGRES_DB: veille
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veille -d veille"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rundeck:
+    build:
+      context: ./rundeck
+      args:
+        RUNDECK_VERSION: ${RUNDECK_VERSION}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4440:4440"
+    mem_limit: 1536m
+    environment:
+      RUNDECK_GRAILS_URL: http://localhost:4440
+      RUNDECK_SERVER_ADDRESS: 0.0.0.0
+      RUNDECK_DATABASE_DRIVER: org.postgresql.Driver
+      RUNDECK_DATABASE_URL: jdbc:postgresql://postgres:5432/rundeck
+      RUNDECK_DATABASE_USERNAME: rundeck
+      RUNDECK_DATABASE_PASSWORD: ${RUNDECK_DB_PASSWORD}
+      VEILLE_DB_DSN: postgresql://veille:${VEILLE_DB_PASSWORD}@postgres:5432/veille
+      TZ: Europe/Paris
+    volumes:
+      - rundeck_data:/home/rundeck/server/data
+      - ./collectors:/opt/veille/collectors:ro
+      - ./sql:/opt/veille/sql:ro
 
 volumes:
   pgdata:
+  rundeck_data:

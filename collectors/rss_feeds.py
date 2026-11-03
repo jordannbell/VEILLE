@@ -9,7 +9,7 @@ from common import save_items
 FEEDS = [
     {"name": "postgresql-versions", "url": "https://www.postgresql.org/versions.rss", "tags": ["postgresql"]},
     {"name": "cert-fr", "url": "https://www.cert.ssi.gouv.fr/feed/", "tags": ["securite"]},
-    {"name": "docker-blog", "url": "https://www.docker.com/blog/feed/", "tags": ["docker"]},
+    {"name": "docker-blog", "url": "https://www.docker.com/feed/", "tags": ["docker"]},
 ]
 
 
