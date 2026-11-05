@@ -41,6 +41,23 @@ services:
       - ./sql:/opt/veille/sql:ro
       - ./scripts:/opt/veille/scripts:ro
 
+  nagios:
+    build: ./nagios
+    profiles: ["supervision"]
+    ports:
+      - "8081:80"
+    mem_limit: 512m
+    environment:
+      NAGIOS_TIMEZONE: Europe/Paris
+      VEILLE_DB_DSN: postgresql://nagios_ro:${NAGIOS_DB_PASSWORD}@postgres:5432/veille
+    volumes:
+      - nagios_etc:/opt/nagios/etc
+      - nagios_var:/opt/nagios/var
+      - ./nagios/veille.cfg:/opt/nagios/etc/conf.d/veille.cfg:ro
+      - ./nagios/plugins/check_veille_freshness:/opt/nagios/libexec/check_veille_freshness:ro
+
 volumes:
   pgdata:
   rundeck_data:
+  nagios_etc:
+  nagios_var:

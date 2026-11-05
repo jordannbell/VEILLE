@@ -1,0 +1,42 @@
+#!/bin/sh
+# Age du dernier digest quotidien, en heures.
+# Codes Nagios : 0=OK 1=WARNING 2=CRITICAL 3=UNKNOWN
+WARN=26
+CRIT=48
+
+while getopts "w:c:" opt; do
+  case "$opt" in
+    w) WARN="$OPTARG" ;;
+    c) CRIT="$OPTARG" ;;
+    *) echo "UNKNOWN - usage: $0 -w HEURES -c HEURES"; exit 3 ;;
+  esac
+done
+
+if [ -z "${VEILLE_DB_DSN:-}" ]; then
+  echo "UNKNOWN - VEILLE_DB_DSN non defini"
+  exit 3
+fi
+
+AGE=$(psql "$VEILLE_DB_DSN" -X -tA -v ON_ERROR_STOP=1 -c \
+  "SELECT COALESCE(round((extract(epoch FROM now() - max(created_at)) / 3600)::numeric, 1)::text, 'none') FROM veille.digests" 2>/dev/null) || {
+  echo "UNKNOWN - impossible d'interroger la base"
+  exit 3
+}
+
+if [ "$AGE" = "none" ]; then
+  echo "CRITICAL - aucun digest en base"
+  exit 2
+fi
+
+PERF="age_heures=${AGE};${WARN};${CRIT};0"
+
+if awk -v a="$AGE" -v c="$CRIT" 'BEGIN{exit !(a>c)}'; then
+  echo "CRITICAL - dernier digest il y a ${AGE} h (seuil ${CRIT} h) | ${PERF}"
+  exit 2
+elif awk -v a="$AGE" -v w="$WARN" 'BEGIN{exit !(a>w)}'; then
+  echo "WARNING - dernier digest il y a ${AGE} h (seuil ${WARN} h) | ${PERF}"
+  exit 1
+fi
+
+echo "OK - dernier digest il y a ${AGE} h | ${PERF}"
+exit 0
